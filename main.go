@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -73,10 +74,13 @@ func sendToCloudWatch(logPart format.LogParts) {
 	// set the AWS SDK to use our bundled certs for the minimal container (certs from CoreOS linux)
 	svc.Config.HTTPClient = &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{RootCAs: pool}}}
 
+	pieces := []string{logPart["tag"].(string), logPart["content"].(string)}
+	logString := strings.Join(pieces, ": ")
+
 	params := &cloudwatchlogs.PutLogEventsInput{
 		LogEvents: []*cloudwatchlogs.InputLogEvent{
 			{
-				Message:   aws.String(logPart["content"].(string)),
+				Message:   aws.String(logString),
 				Timestamp: aws.Int64(makeMilliTimestamp(logPart["timestamp"].(time.Time))),
 			},
 		},
